@@ -63,7 +63,7 @@ public class BankController {
 			retVal.setUrl("http://localhost:1235/payment/redirectToBankSite?paymentId=" + retVal.getPaymentId());
 			saved.setPaymentUrl(retVal.getUrl());
 			paymentService.save(saved);
-			saveRequest(merchant);
+			saveRequest(merchant,saved.getId());
 			return retVal;
         }else{
         	return null;
@@ -71,8 +71,9 @@ public class BankController {
         
 	}
 	
-	public void saveRequest(MerchantDTO merchant){
+	public void saveRequest(MerchantDTO merchant,Long paymentId){
 		Request toSave = new Request();
+		toSave.setPaymentId(paymentId);
 		toSave.setAmount(merchant.getAmount());
 		toSave.setMerchantId(merchant.getMerchant_id());
 		toSave.setMerchantOrderId(merchant.getMerchant_order_id());

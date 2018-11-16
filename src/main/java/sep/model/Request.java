@@ -20,6 +20,9 @@ public class Request {
 	
 	@Column(name = "MERCHANT_ORDER_ID")
     private Integer merchantOrderId;
+	
+	@Column(name = "PAYMENT_ID")
+	private Long paymentId;
 
     @Column(name = "MERCHANT_ID")
     private String merchantId;
@@ -48,6 +51,14 @@ public class Request {
     public Request(){
     	
     }
+    
+	public Long getPaymentId() {
+		return paymentId;
+	}
+
+	public void setPaymentId(Long paymentId) {
+		this.paymentId = paymentId;
+	}
 
 	public Long getId() {
 		return id;
