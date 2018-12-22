@@ -2,6 +2,8 @@ package sep.controller;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,12 +33,15 @@ public class PaymentController {
 	
 	@Autowired
 	private RequestService requestService;
+	
+	private static final Logger logger = LoggerFactory.getLogger(PaymentController.class);
 
 	@CrossOrigin
 	@RequestMapping(value = "/redirectToBankSite/{id}", method = RequestMethod.POST)
 	public void redirect(@PathVariable("id") Integer id) {
 		PaymentUrlAndId urlAndId = urlAndIdService.findById(new Long(id));
-		System.out.println("Treba da ga prebacim na url: " + urlAndId.getPaymentUrl());
+		System.out.println("\n\t\tTreba da ga prebacim na url: " + urlAndId.getPaymentUrl() + "\n");
+		logger.info("\n\t\tRedirekcija na sajt banke:\n" + urlAndId.getPaymentUrl() + "\n");
 	}
 	
 	@CrossOrigin
@@ -54,16 +59,21 @@ public class PaymentController {
 				trazeni = req;
 			}
 		}
+		
 		List<Card> listaKartica = cardService.getAll();
 		Card karticaMarchanta = new Card();
 		Long idMerchanta = new Long(trazeni.getMerchantId());
+		
 		for(Card c : listaKartica) {
 			if(c.getMerchantId()!=null && c.getMerchantId().compareTo(idMerchanta)==0) {
 				karticaMarchanta = c;
 			}
 		}
+		
 		CardDTO cardToReturn = new CardDTO();
 		cardToReturn.setPan(karticaMarchanta.getPan().toString());
+		
+		logger.info("\n\t\tVlasnik kartice: " + cardToReturn.getCardHolderName() + "\n");
 		return cardToReturn;
 	}
 	
@@ -93,13 +103,13 @@ public class PaymentController {
 					card.getExpirationDate().equals(c.getExpirationDate()) &&
 							pan.compareTo(c.getPan())==0 && securityCode.compareTo(c.getSecurityCode())==0
 							) {
-				System.out.println("Postoji covek sa ovom platnom karticom");
+				System.out.println("\n\t\tPostoji čovek sa ovom platnom karticom.\n");
 				postojiKartica = true;
 				karticaPlacenika = c;
 			}
 		}
-		if(postojiKartica) {
-			
+		
+		if(postojiKartica) {		
 			if(trazeni.getId()!=null) {
 				if(karticaPlacenika.getAmount().compareTo(trazeni.getAmount())>0) {
 					return true;
@@ -136,49 +146,57 @@ public class PaymentController {
 				trazeni = req;
 			}
 		}
+		
 		Long idMerchanta = new Long(trazeni.getMerchantId());
 		for(Card c : listaKartica) {
 			if(card.getCardHolderName().equals(c.getCardHolderName()) && 
 					card.getExpirationDate().equals(c.getExpirationDate()) &&
 							pan.compareTo(c.getPan())==0 && securityCode.compareTo(c.getSecurityCode())==0
 							) {
-				System.out.println("Postoji covek sa ovom platnom karticom");
+				System.out.println("\n\t\tPostoji čovek sa ovom platnom karticom.\n");
 				postojiKartica = true;
 				karticaPlacenika = c;
 			}if(c.getMerchantId()!=null && c.getMerchantId().compareTo(idMerchanta)==0) {
 				karticaMarchanta = c;
 			}
 		}
-		if(postojiKartica) {
-			
+		
+		if(postojiKartica) {	
 			if(trazeni.getId()!=null) {
 				if(karticaPlacenika.getAmount().compareTo(trazeni.getAmount())>0) {
 					karticaPlacenika.setAmount(karticaPlacenika.getAmount().subtract(trazeni.getAmount()));
 					Card nakonTransakcije = cardService.save(karticaPlacenika);
-					System.out.println("Iznos nakon transkacije na placenikovoj kartici:" + nakonTransakcije.getAmount());
+					System.out.println("\n\t\tIznos nakon transkacije na plaćenikovoj kartici: " + nakonTransakcije.getAmount() + "\n");
 					karticaMarchanta.setAmount(karticaMarchanta.getAmount().add(trazeni.getAmount()));
 					Card nakonTransk2 = cardService.save(karticaMarchanta);
-					System.out.println("Iznos nakon transkacije na merchantovoj kartici:" + nakonTransk2.getAmount());
+					System.out.println("\n\t\tIznos nakon transkacije na merchant-ovoj kartici: " + nakonTransk2.getAmount() + "\n");
 					URLDTO url = new URLDTO();
-					url.setUrl("http://localhost:1234/uspesno.html");
+					url.setUrl("https://localhost:9081/uspesno.html");
+					
+					logger.info("Izvršeno plaćanje: " + url + "\n");
 					return url;
 				}else {
 					URLDTO url = new URLDTO();
-					url.setUrl("http://localhost:1234/greska.html");
+					url.setUrl("https://localhost:9081/greska.html");
+					
+					logger.info("Greška prilikom pokušaja plaćanja!");
 					return url;
 				}
 			}else {
 				URLDTO url = new URLDTO();
-				url.setUrl("http://localhost:1234/greska.html");
+				url.setUrl("https://localhost:9081/greska.html");
+				
+				logger.info("Greška prilikom pokušaja plaćanja!");
 				return url;
 			}
 			
 		}else {
 			URLDTO url = new URLDTO();
-			url.setUrl("http://localhost:1234/greska.html");
+			url.setUrl("https://localhost:9081/greska.html");
+			
+			logger.info("Greška prilikom pokušaja plaćanja!");
 			return url;
 		}
-		
 	}
 
 }
